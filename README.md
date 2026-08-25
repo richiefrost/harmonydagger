@@ -24,6 +24,7 @@ HarmonyDagger is a tool for audio protection against generative AI models, intro
 - **Visualization Tools**: Optional visual analytics of audio perturbations
 - **Parallel Batch Processing**: Process multiple files efficiently using multiple CPU cores
 - **Streamlit Web Demo**: Upload audio and hear protected version in the browser
+- **Voice Clone Check**: Side-by-side XTTS clones from original vs protected audio
 - **Docker Support**: One-command deployment with Docker Compose
 - **PyPI Package**: Easy installation via pip
 
@@ -49,6 +50,15 @@ pip install -e .
 pip install -e ".[streamlit]"
 streamlit run streamlit_app.py
 ```
+
+To run the voice-clone side-by-side check in the demo (Coqui XTTS-v2):
+
+```bash
+pip install -e ".[streamlit,clone]"
+streamlit run streamlit_app.py
+```
+
+The first clone run downloads the XTTS-v2 model. Generate two clips from the same text prompt: one using the original recording as the speaker reference, one using the protected recording. Compare them to hear whether protection actually disrupts cloning. Current psychoacoustic settings often do not stop XTTS; this path is an evaluation harness for that attack.
 
 ### With Docker
 

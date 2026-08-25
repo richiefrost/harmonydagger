@@ -3,6 +3,10 @@ HarmonyDagger Web Demo - Upload audio and hear the protected version.
 
 Run with: streamlit run streamlit_app.py
 """
+from harmonydagger.numba_env import ensure_numba_cache_dir
+
+ensure_numba_cache_dir()
+
 import io
 import tempfile
 
@@ -10,6 +14,13 @@ import soundfile as sf
 import streamlit as st
 
 from harmonydagger.benchmark import generate_benchmark_report
+from harmonydagger.clone_eval import (
+    DEFAULT_CLONE_TEXT,
+    MAX_CLONE_TEXT_CHARS,
+    CloneUnavailableError,
+    compare_reference_clones,
+    is_clone_available,
+)
 from harmonydagger.core import generate_protected_audio
 from harmonydagger.demo_audio import (
     DEMO_UPLOAD_TYPES,
@@ -100,3 +111,63 @@ if uploaded_file is not None:
     sf.write(buf, protected, sr, format="WAV")
     buf.seek(0)
     st.download_button("Download Protected Audio", buf, "protected.wav", "audio/wav")
+
+    st.subheader("Voice clone check")
+    st.caption(
+        "This is the actual attack: a TTS model uses your clip as a speaker "
+        "reference and speaks new text. Compare the clone from the original "
+        "with the clone from the protected audio."
+    )
+    clone_text = st.text_area(
+        "Text for the model to speak",
+        value=DEFAULT_CLONE_TEXT,
+        max_chars=MAX_CLONE_TEXT_CHARS,
+    )
+    if not is_clone_available():
+        st.info(
+            'Voice cloning requires the optional extra: '
+            '`pip install -e ".[clone]"` (installs coqui-tts). '
+            "The first run downloads the XTTS-v2 model."
+        )
+    if st.button("Generate clones"):
+        try:
+            with st.spinner(
+                "Generating clones from original and protected references..."
+            ):
+                clones = compare_reference_clones(
+                    audio, protected, sr, clone_text
+                )
+        except (CloneUnavailableError, ValueError) as exc:
+            st.error(str(exc))
+        else:
+            orig_col, prot_col = st.columns(2)
+            with orig_col:
+                st.markdown("**Clone from original**")
+                orig_buf = io.BytesIO()
+                sf.write(
+                    orig_buf,
+                    clones["original_clone"],
+                    clones["original_clone_sr"],
+                    format="WAV",
+                )
+                orig_buf.seek(0)
+                st.audio(orig_buf.getvalue(), format="audio/wav")
+                st.metric(
+                    "Similarity to original speaker",
+                    f"{clones['original_clone_similarity']:.3f}",
+                )
+            with prot_col:
+                st.markdown("**Clone from protected**")
+                prot_buf = io.BytesIO()
+                sf.write(
+                    prot_buf,
+                    clones["protected_clone"],
+                    clones["protected_clone_sr"],
+                    format="WAV",
+                )
+                prot_buf.seek(0)
+                st.audio(prot_buf.getvalue(), format="audio/wav")
+                st.metric(
+                    "Similarity to original speaker",
+                    f"{clones['protected_clone_similarity']:.3f}",
+                )

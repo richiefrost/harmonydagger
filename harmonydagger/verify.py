@@ -8,6 +8,10 @@ between original and protected versions.
 import logging
 from typing import Dict
 
+from .numba_env import ensure_numba_cache_dir
+
+ensure_numba_cache_dir()
+
 import librosa
 import numpy as np
 from numpy.typing import NDArray
