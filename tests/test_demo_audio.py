@@ -1,5 +1,5 @@
 """
-Tests for Streamlit demo audio loading, including MP3.
+Tests for Streamlit demo audio loading, including MP3 and M4A.
 """
 import shutil
 import tempfile
@@ -34,6 +34,15 @@ def _write_test_mp3(wav_path: Path, mp3_path: Path) -> bytes:
     return mp3_path.read_bytes()
 
 
+def _write_test_m4a(wav_path: Path, m4a_path: Path) -> bytes:
+    from pydub import AudioSegment
+
+    AudioSegment.from_wav(str(wav_path)).export(
+        str(m4a_path), format="ipod", codec="aac"
+    )
+    return m4a_path.read_bytes()
+
+
 class DemoAudioLoadTest(unittest.TestCase):
     def setUp(self):
         self.sample_rate = 22050
@@ -65,6 +74,17 @@ class DemoAudioLoadTest(unittest.TestCase):
         self.assertGreater(sr, 0)
         self.assertAlmostEqual(len(audio) / sr, self.duration, delta=0.1)
 
+    @pytest.mark.skipif(not FFMPEG_AVAILABLE, reason="Requires ffmpeg for M4A support")
+    def test_read_audio_for_demo_loads_m4a(self):
+        m4a_path = self.temp_path / "test_audio.m4a"
+        _write_test_m4a(self.wav_path, m4a_path)
+
+        audio, sr = read_audio_for_demo(str(m4a_path))
+
+        self.assertEqual(audio.ndim, 1)
+        self.assertGreater(sr, 0)
+        self.assertAlmostEqual(len(audio) / sr, self.duration, delta=0.1)
+
     def test_read_audio_for_demo_converts_stereo_to_mono(self):
         stereo = np.column_stack([self.test_audio, self.test_audio * 0.5])
         stereo_path = self.temp_path / "stereo.wav"
@@ -85,6 +105,10 @@ class DemoAudioLoadTest(unittest.TestCase):
     def test_suffix_for_demo_upload_preserves_mp3(self):
         self.assertEqual(suffix_for_demo_upload("clip.mp3"), ".mp3")
         self.assertEqual(suffix_for_demo_upload("Clip.MP3"), ".mp3")
+
+    def test_suffix_for_demo_upload_preserves_m4a(self):
+        self.assertEqual(suffix_for_demo_upload("clip.m4a"), ".m4a")
+        self.assertEqual(suffix_for_demo_upload("Clip.M4A"), ".m4a")
 
     def test_suffix_for_demo_upload_preserves_supported_formats(self):
         self.assertEqual(suffix_for_demo_upload("a.wav"), ".wav")
@@ -115,6 +139,36 @@ def test_streamlit_app_accepts_and_processes_mp3():
         assert any("mp3" in t for t in allowed)
 
         at.file_uploader[0].set_value(("clip.mp3", mp3_bytes, "audio/mpeg"))
+        at.run()
+
+        assert not at.exception
+        assert not at.error
+        subheaders = [s.value for s in at.subheader]
+        assert "Original Audio" in subheaders
+        assert "Protected Audio" in subheaders
+        assert any(btn.label == "Download Protected Audio" for btn in at.download_button)
+        assert len(at.metric) >= 4
+
+
+@pytest.mark.skipif(not FFMPEG_AVAILABLE, reason="Requires ffmpeg for M4A support")
+def test_streamlit_app_accepts_and_processes_m4a():
+    """Uploading M4A in the demo should decode and show original plus protected audio."""
+    from streamlit.testing.v1 import AppTest
+
+    with tempfile.TemporaryDirectory() as tmp:
+        wav_path = Path(tmp) / "clip.wav"
+        m4a_path = Path(tmp) / "clip.m4a"
+        sf.write(wav_path, _sine_wave(), 22050)
+        m4a_bytes = _write_test_m4a(wav_path, m4a_path)
+
+        at = AppTest.from_file(str(APP_PATH), default_timeout=60)
+        at.run()
+        assert not at.exception
+
+        allowed = [t.lower() for t in at.file_uploader[0].allowed_type]
+        assert any("m4a" in t for t in allowed)
+
+        at.file_uploader[0].set_value(("clip.m4a", m4a_bytes, "audio/mp4"))
         at.run()
 
         assert not at.exception
