@@ -131,6 +131,8 @@ def test_streamlit_app_shows_voice_clone_check_after_upload():
     assert not at.exception
     assert not at.error
     subheaders = [s.value for s in at.subheader]
-    assert "Voice clone check" in subheaders
+    assert "Generation check" in subheaders
+    radio_options = [opt for r in at.radio for opt in r.options]
+    assert any("XTTS" in opt for opt in radio_options)
     assert any(DEFAULT_CLONE_TEXT in (ta.value or "") for ta in at.text_area)
     assert any(btn.label == "Generate clones" for btn in at.button)

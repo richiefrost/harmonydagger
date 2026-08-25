@@ -21,6 +21,13 @@ from harmonydagger.clone_eval import (
     compare_reference_clones,
     is_clone_available,
 )
+from harmonydagger.music_eval import (
+    DEFAULT_MUSIC_TEXT,
+    MAX_MUSIC_TEXT_CHARS,
+    MusicUnavailableError,
+    compare_reference_music,
+    is_music_available,
+)
 from harmonydagger.core import generate_protected_audio
 from harmonydagger.demo_audio import (
     DEMO_UPLOAD_TYPES,
@@ -29,6 +36,16 @@ from harmonydagger.demo_audio import (
     suffix_for_demo_upload,
 )
 from harmonydagger.verify import verify_protection
+
+
+def _play_generated(title, audio, sample_rate, metric_label, metric_value):
+    st.markdown(f"**{title}**")
+    buf = io.BytesIO()
+    sf.write(buf, audio, sample_rate, format="WAV")
+    buf.seek(0)
+    st.audio(buf.getvalue(), format="audio/wav")
+    st.metric(metric_label, f"{metric_value:.3f}")
+
 
 st.set_page_config(page_title="HarmonyDagger Demo", layout="wide")
 
@@ -112,62 +129,100 @@ if uploaded_file is not None:
     buf.seek(0)
     st.download_button("Download Protected Audio", buf, "protected.wav", "audio/wav")
 
-    st.subheader("Voice clone check")
-    st.caption(
-        "This is the actual attack: a TTS model uses your clip as a speaker "
-        "reference and speaks new text. Compare the clone from the original "
-        "with the clone from the protected audio."
+    st.subheader("Generation check")
+    mode = st.radio(
+        "Model",
+        ["Voice clone (XTTS)", "Music (MusicGen-small)"],
+        horizontal=True,
     )
-    clone_text = st.text_area(
-        "Text for the model to speak",
-        value=DEFAULT_CLONE_TEXT,
-        max_chars=MAX_CLONE_TEXT_CHARS,
-    )
-    if not is_clone_available():
-        st.info(
-            'Voice cloning requires the optional extra: '
-            '`pip install -e ".[clone]"` (installs coqui-tts). '
-            "The first run downloads the XTTS-v2 model."
+
+    if mode.startswith("Voice"):
+        st.caption(
+            "This is the actual attack: a TTS model uses your clip as a speaker "
+            "reference and speaks new text. Compare the clone from the original "
+            "with the clone from the protected audio."
         )
-    if st.button("Generate clones"):
-        try:
-            with st.spinner(
-                "Generating clones from original and protected references..."
-            ):
-                clones = compare_reference_clones(
-                    audio, protected, sr, clone_text
-                )
-        except (CloneUnavailableError, ValueError) as exc:
-            st.error(str(exc))
-        else:
-            orig_col, prot_col = st.columns(2)
-            with orig_col:
-                st.markdown("**Clone from original**")
-                orig_buf = io.BytesIO()
-                sf.write(
-                    orig_buf,
-                    clones["original_clone"],
-                    clones["original_clone_sr"],
-                    format="WAV",
-                )
-                orig_buf.seek(0)
-                st.audio(orig_buf.getvalue(), format="audio/wav")
-                st.metric(
-                    "Similarity to original speaker",
-                    f"{clones['original_clone_similarity']:.3f}",
-                )
-            with prot_col:
-                st.markdown("**Clone from protected**")
-                prot_buf = io.BytesIO()
-                sf.write(
-                    prot_buf,
-                    clones["protected_clone"],
-                    clones["protected_clone_sr"],
-                    format="WAV",
-                )
-                prot_buf.seek(0)
-                st.audio(prot_buf.getvalue(), format="audio/wav")
-                st.metric(
-                    "Similarity to original speaker",
-                    f"{clones['protected_clone_similarity']:.3f}",
-                )
+        clone_text = st.text_area(
+            "Text for the model to speak",
+            value=DEFAULT_CLONE_TEXT,
+            max_chars=MAX_CLONE_TEXT_CHARS,
+        )
+        if not is_clone_available():
+            st.info(
+                'Voice cloning requires the optional extra: '
+                '`pip install -e ".[clone]"` (installs coqui-tts). '
+                "The first run downloads the XTTS-v2 model."
+            )
+        if st.button("Generate clones"):
+            try:
+                with st.spinner(
+                    "Generating clones from original and protected references..."
+                ):
+                    clones = compare_reference_clones(
+                        audio, protected, sr, clone_text
+                    )
+            except (CloneUnavailableError, ValueError) as exc:
+                st.error(str(exc))
+            else:
+                orig_col, prot_col = st.columns(2)
+                with orig_col:
+                    _play_generated(
+                        "Clone from original",
+                        clones["original_clone"],
+                        clones["original_clone_sr"],
+                        "Similarity to original speaker",
+                        clones["original_clone_similarity"],
+                    )
+                with prot_col:
+                    _play_generated(
+                        "Clone from protected",
+                        clones["protected_clone"],
+                        clones["protected_clone_sr"],
+                        "Similarity to original speaker",
+                        clones["protected_clone_similarity"],
+                    )
+    else:
+        st.caption(
+            "This is the music attack: MusicGen-small continues your clip "
+            "using a text prompt. Compare the continuation from the original "
+            "with the continuation from the protected audio."
+        )
+        music_text = st.text_area(
+            "Text prompt for the music model",
+            value=DEFAULT_MUSIC_TEXT,
+            max_chars=MAX_MUSIC_TEXT_CHARS,
+        )
+        if not is_music_available():
+            st.info(
+                'Music generation requires the optional extra: '
+                '`pip install -e ".[music]"` (installs transformers). '
+                "The first run downloads facebook/musicgen-small."
+            )
+        if st.button("Generate music"):
+            try:
+                with st.spinner(
+                    "Generating music from original and protected prompts..."
+                ):
+                    generations = compare_reference_music(
+                        audio, protected, sr, music_text
+                    )
+            except (MusicUnavailableError, ValueError) as exc:
+                st.error(str(exc))
+            else:
+                orig_col, prot_col = st.columns(2)
+                with orig_col:
+                    _play_generated(
+                        "Music from original",
+                        generations["original_music"],
+                        generations["original_music_sr"],
+                        "Similarity to original clip",
+                        generations["original_music_similarity"],
+                    )
+                with prot_col:
+                    _play_generated(
+                        "Music from protected",
+                        generations["protected_music"],
+                        generations["protected_music_sr"],
+                        "Similarity to original clip",
+                        generations["protected_music_similarity"],
+                    )
