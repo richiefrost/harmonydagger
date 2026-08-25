@@ -54,6 +54,12 @@ gpu = [
 streamlit = [
     "streamlit>=1.20.0",
 ]
+clone = [
+    "coqui-tts[codec]>=0.24.0",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "transformers>=4.57,<5",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/jaschadub/harmonydagger"

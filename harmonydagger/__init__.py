@@ -6,6 +6,10 @@ psychoacoustically-masked noise that helps protect while
 remaining imperceptible to human listeners.
 """
 
+from .numba_env import ensure_numba_cache_dir
+
+ensure_numba_cache_dir()
+
 from .benchmark import compute_snr, generate_benchmark_report
 from .core import (
     apply_noise_multichannel,

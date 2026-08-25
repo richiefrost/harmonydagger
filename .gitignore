@@ -26,6 +26,7 @@ build/
 
 # Test artifacts
 .pytest_cache/
+.numba_cache/
 .coverage
 htmlcov/
 nosetests.xml
