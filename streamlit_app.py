@@ -6,12 +6,17 @@ Run with: streamlit run streamlit_app.py
 import io
 import tempfile
 
-import numpy as np
 import soundfile as sf
 import streamlit as st
 
 from harmonydagger.benchmark import generate_benchmark_report
 from harmonydagger.core import generate_protected_audio
+from harmonydagger.demo_audio import (
+    DEMO_UPLOAD_TYPES,
+    DemoAudioLoadError,
+    read_audio_for_demo,
+    suffix_for_demo_upload,
+)
 from harmonydagger.verify import verify_protection
 
 st.set_page_config(page_title="HarmonyDagger Demo", layout="wide")
@@ -34,24 +39,25 @@ vocal_mode = st.sidebar.checkbox("Vocal Mode (voice optimization)", value=False)
 use_phase = st.sidebar.checkbox("Phase Perturbation", value=False)
 use_temporal = st.sidebar.checkbox("Temporal Masking", value=False)
 
-uploaded_file = st.file_uploader("Upload audio file", type=["wav", "flac", "ogg"])
+uploaded_file = st.file_uploader("Upload audio file", type=DEMO_UPLOAD_TYPES)
 
 if uploaded_file is not None:
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+    suffix = suffix_for_demo_upload(uploaded_file.name)
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(uploaded_file.read())
         tmp_path = tmp.name
 
-    audio, sr = sf.read(tmp_path)
+    try:
+        audio, sr = read_audio_for_demo(tmp_path)
+    except DemoAudioLoadError as exc:
+        st.error(str(exc))
+        st.stop()
 
     # Limit to 30 seconds
     max_samples = sr * 30
     if len(audio) > max_samples:
         audio = audio[:max_samples]
         st.warning("Audio trimmed to 30 seconds for the demo.")
-
-    # Ensure mono for simplicity
-    if audio.ndim > 1:
-        audio = np.mean(audio, axis=1)
 
     st.subheader("Original Audio")
     st.audio(tmp_path)
