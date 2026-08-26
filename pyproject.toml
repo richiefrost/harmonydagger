@@ -54,6 +54,17 @@ gpu = [
 streamlit = [
     "streamlit>=1.20.0",
 ]
+music = [
+    # NOTE: mutually exclusive with the `clone` extra below, which pins transformers<5.
+    # The research code needs transformers>=5 (SDPA/eager handling, ClapProcessor kwargs).
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "transformers>=5.0",
+    "peft>=0.10.0",
+    "accelerate>=0.30.0",
+    "librosa>=0.10.0",
+    "pandas>=2.0.0",
+]
 clone = [
     "coqui-tts[codec]>=0.24.0",
     "torch>=2.0.0",
@@ -69,7 +80,7 @@ clone = [
 harmonydagger = "harmonydagger.cli:main"
 
 [tool.setuptools]
-packages = ["harmonydagger"]
+packages = ["harmonydagger", "research"]
 
 [tool.black]
 line-length = 88

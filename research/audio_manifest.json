@@ -1,0 +1,122 @@
+{
+  "inaudible_0_original": {
+    "file": "assets/audio/inaudible_0_original.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "inaudible_0_protected": {
+    "file": "assets/audio/inaudible_0_protected.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "inaudible_0_pert_x20": {
+    "file": "assets/audio/inaudible_0_pert_x20.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "inaudible_1_original": {
+    "file": "assets/audio/inaudible_1_original.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "inaudible_1_protected": {
+    "file": "assets/audio/inaudible_1_protected.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "inaudible_1_pert_x20": {
+    "file": "assets/audio/inaudible_1_pert_x20.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "bilevel_original": {
+    "file": "assets/audio/bilevel_original.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "bilevel_protected": {
+    "file": "assets/audio/bilevel_protected.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "baseline_protected": {
+    "file": "assets/audio/baseline_protected.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "memo_original": {
+    "file": "assets/audio/memo_original.flac",
+    "sr": 32000,
+    "dur_s": 8.0
+  },
+  "memo_gen_clean": {
+    "file": "assets/audio/memo_gen_clean.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "memo_gen_protected": {
+    "file": "assets/audio/memo_gen_protected.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_base_0": {
+    "file": "assets/audio/style_gen_base_0.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_clean_0": {
+    "file": "assets/audio/style_gen_clean_0.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_protected_0": {
+    "file": "assets/audio/style_gen_protected_0.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_base_1": {
+    "file": "assets/audio/style_gen_base_1.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_clean_1": {
+    "file": "assets/audio/style_gen_clean_1.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_protected_1": {
+    "file": "assets/audio/style_gen_protected_1.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_base_2": {
+    "file": "assets/audio/style_gen_base_2.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_clean_2": {
+    "file": "assets/audio/style_gen_clean_2.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_protected_2": {
+    "file": "assets/audio/style_gen_protected_2.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_base_3": {
+    "file": "assets/audio/style_gen_base_3.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_clean_3": {
+    "file": "assets/audio/style_gen_clean_3.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  },
+  "style_gen_protected_3": {
+    "file": "assets/audio/style_gen_protected_3.flac",
+    "sr": 32000,
+    "dur_s": 7.94
+  }
+}
