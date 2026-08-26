@@ -161,7 +161,17 @@
       "n=1 artist, 1 seed, 1 protection config -- needs replication",
       "uses the WEAKER variance objective; bi-level on 66 windows costs ~3.6h vs ~18min and was ~3x better on tokens",
       "measured on held-out likelihood; whether a 20.8% likelihood defence is AUDIBLE is unresolved"
-    ]
+    ],
+    "RETRACTED": true,
+    "retraction": {
+      "verdict": "RETRACTED as a style result. The statistics are sound; the thing being measured is not style.",
+      "reason": "The shuffle gate shows the baseline learned marginal token statistics, not musical structure. The 20.8% is protecting a timbre prior.",
+      "explains": [
+        "training loss barely descending (7.14 -> 6.76) while held-out loss improved MORE",
+        "generations worse than the base model at every guidance scale (CFG ruled out: lower guidance is worse -- 1.0 -> +0.334, 1.5 -> +0.402, 3.0 -> +0.473, base +0.525)",
+        "the cross-artist control passing anyway -- marginals differ between artists, so that control cannot separate timbre from style"
+      ]
+    }
   },
   "failed_coarse_targeting": {
     "what": "Doc \u00a77 Tier-1 #1: re-target the objective at codebook 1 (the perceptually load-bearing one) instead of the pooled latent.",
@@ -301,6 +311,50 @@
     ],
     "separation_nats": 1.268,
     "conclusion": "Training on the matching artist IMPROVES held-out likelihood; a different artist DEGRADES it, at 8.9 sigma with zero of 18 clips improving. The style learning is genuinely artist-specific, so the protection result is measuring what it claims to.",
-    "caveat": "The control trained on 18 clips vs 48 for the matching arm, so clip count and steps-per-clip differ. The direction is far too strong for that to explain a 1.27-nat separation, but a size-matched control would be tidier."
+    "caveat": "The control trained on 18 clips vs 48 for the matching arm, so clip count and steps-per-clip differ. The direction is far too strong for that to explain a 1.27-nat separation, but a size-matched control would be tidier.",
+    "status": "NECESSARY BUT NOT SUFFICIENT",
+    "superseded_note": "This control rules out generic domain adaptation, but NOT the timbre explanation: marginal token distributions differ between artists, so an artist-specific timbre prior passes this control too. The shuffle gate is the test that separates them."
+  },
+  "shuffle_gate": {
+    "what": "The decisive test for whether a fine-tune learned STYLE or merely TIMBRE STATISTICS. Score held-out clips normally, then score them with the token sequence SHUFFLED IN TIME -- which destroys all musical structure while preserving the marginal token distribution exactly.",
+    "how_to_read": "shuffled improvement ~= real -> learned marginals only (a timbre prior). shuffled << real -> learned genuine temporal structure.",
+    "runs": [
+      {
+        "config": "LoRA r=32 q/v, 1200 steps, 18 clips",
+        "real": -0.476,
+        "shuffled": -0.8337,
+        "ratio": 1.75,
+        "real_improving_pct": 78,
+        "shuffled_improving_pct": 100,
+        "n": 18
+      },
+      {
+        "config": "LoRA r=32 ALL targets, 3600 steps, 36 clips",
+        "real": -0.4443,
+        "shuffled": -0.9485,
+        "ratio": 2.13,
+        "real_improving_pct": 86,
+        "shuffled_improving_pct": 97,
+        "n": 36
+      }
+    ],
+    "conclusion": "The gain does not merely survive destroying temporal structure -- it GROWS, by 1.75x and 2.13x across two configs. The fine-tune learned the artist's marginal token distribution (timbre and register) and nothing about their music.",
+    "status": "This is now a required GATE. If shuffled improvement is comparable to real, the baseline is not learning style and no protection number derived from it means anything."
+  },
+  "the_wall": {
+    "what": "The central negative result of the week: we could not build a style-mimicry baseline at catalogue scale.",
+    "two_ends": [
+      {
+        "regime": "full-decoder fine-tune, 6 clips",
+        "outcome": "learns structure, but by MEMORIZING (0.93 CLAP similarity to an individual training clip)"
+      },
+      {
+        "regime": "LoRA, 48 clips, 1200-3600 steps",
+        "outcome": "learns only marginals -- the shuffle gate fails at 1.75-2.13x"
+      }
+    ],
+    "no_middle_found": true,
+    "plausible_reason": "Data scale. 22 tracks x 30 s is ~11 minutes; real style adapters use hours. 1200 steps over 48 clips is ~25 passes per clip -- enough to shift output marginals, nowhere near enough to learn structure.",
+    "implication": "This VINDICATES the research doc's \u00a71 reframing. Self-defense (\"can they reproduce my track?\") was chosen because dataset-scale style mimicry is structurally unavailable to an individual artist. Our attempt to measure style mimicry directly hit the same wall from the other side. Doc \u00a76's \"untested scale\" is untested for a substantive reason, not an oversight."
   }
 }

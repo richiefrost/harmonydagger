@@ -38,21 +38,54 @@ pip install -e ".[streamlit,music]"    # music-model research pages
 pip install -e ".[streamlit,clone]"    # voice-clone demo on the main page
 ```
 
-## Headline result
+## Headline result — a negative one
 
-**20.8% style-protection efficacy** (paired t = 5.79, p < 0.001, 18/18 held-out clips
-defended) from an **inaudible** perturbation (audibility 0.0165, where white noise scores
-0.735 on the same metric).
+**We could not build a style-mimicry baseline at catalogue scale.** MusicGen either
+memorizes individual clips (full-decoder fine-tune, 0.93 CLAP similarity to one clip) or
+learns only the artist's marginal token statistics — timbre and register — with nothing in
+between.
 
-That is: an inaudible perturbation removed about a fifth of what a LoRA fine-tune learned
-about one artist. It is **not** prevention, and it is n=1 artist / 1 seed / 1 config.
+The decisive test is `shuffle_test.py`: score held-out clips normally, then score them with
+the token sequence **shuffled in time**, which destroys all musical structure while
+preserving the marginal distribution exactly.
 
-**The control passes.** The obvious confounder is that fine-tuning on *any* music might
-improve held-out loss on *any* music (generic domain adaptation), in which case the number
-measures nothing about style. Training on a **different** artist instead *degrades* held-out
-loss on 6th Sense by +0.7921 — 8.9 sigma, 0 of 18 clips improving, a **1.27-nat separation**
-from the matching arm. Same held-out clips and same base model in both runs (verified). So
-the style learning is genuinely artist-specific.
+| | real token order | shuffled in time | ratio |
+|---|---|---|---|
+| LoRA r=32 q/v, 1200 steps | −0.4760 (78% of clips) | **−0.8337** (100%) | 1.75× |
+| LoRA r=32 all targets, 3600 steps | −0.4443 (86%) | **−0.9485** (97%) | 2.13× |
+
+The measured gain does not merely survive destroying the music — it **grows**. So the
+fine-tune learned a timbre prior, not a style.
+
+**This vindicates the research doc's §1 reframing.** Self-defense ("can they reproduce my
+track?") was chosen because dataset-scale style mimicry is structurally unavailable to an
+individual artist. Trying to measure style mimicry directly hit the same wall from the
+other side. Doc §6's "untested scale" is untested for a substantive reason.
+
+`shuffle_test.py` is now a required **gate**: if shuffled improvement is comparable to
+real, the baseline is not learning style and no protection number from it means anything.
+
+### ❌ Retracted: 20.8% style-protection efficacy
+
+An earlier version of this README and dashboard led with a 20.8% efficacy result (paired
+t = 5.79, p < 0.001, 18/18 clips defended). **It is retracted as a style result.** The
+statistics were sound; the quantity being protected was a timbre prior, not style. It also
+explains three anomalies at once — training loss barely descending while held-out improved
+*more*, generations worse than base at every guidance scale (CFG ruled out: lower guidance
+is worse), and the cross-artist control passing anyway (marginals differ between artists,
+so that control cannot separate timbre from style).
+
+The retracted result stays visible on the dashboard rather than being deleted. It is a
+useful cautionary example, and hiding it would misrepresent the week.
+
+### What does still stand
+
+- **Bi-level protection tripled the effect** in the doc's own threat model (single-track
+  memorization): 8.7 → 29 pts, replicated n=3 (mean 19.6, though sd 9.6 — unreliable).
+- **The perturbation is genuinely inaudible** (0.0024–0.078 vs 0.735 for white noise).
+- **Three negative results** that constrain the design space — see below.
+- But bi-level's damage is **fine-codebook-weighted**, and a 29-pt token gap produced no
+  audible difference. Stronger, not different in kind.
 
 ## What is in here
 

@@ -106,8 +106,18 @@ st.info(
 
 st.subheader("Style setting — LoRA on a 22-track catalogue")
 st.caption(
-    "This is the arm behind the 20.8% headline. Unprimed generation from the text prompt "
-    "only. `base` is the pretrained model with no fine-tuning at all — the floor."
+    "Unprimed generation from the text prompt only. `base` is the pretrained model with no "
+    "fine-tuning at all — the floor."
+)
+st.error(
+    "**The result this arm was built to demonstrate has been RETRACTED.** The shuffle gate "
+    "showed this fine-tune learned the artist's marginal token statistics (timbre and "
+    "register), not their music — held-out improvement GROWS by 1.75–2.13x when the token "
+    "sequence is shuffled in time, which destroys all musical structure. So neither arm "
+    "here is a style mimic, and the clean-vs-protected comparison does not measure style "
+    "protection. Kept on the page because what these actually sound like is the most "
+    "direct evidence for that conclusion. See the Findings page.",
+    icon=":material/cancel:",
 )
 idx = st.radio("Sample", [0, 1, 2, 3], horizontal=True,
                format_func=lambda i: f"sample {i + 1}")
@@ -123,13 +133,12 @@ with c:
     play(f"style_gen_protected_{idx}")
 
 st.warning(
-    "**Set expectations before listening.** These generations are mediocre for *both* arms. "
-    "The LoRA config that produces the 20.8% likelihood defence demonstrably generalizes "
-    "(5.5 sigma on held-out loss) while still generating poor audio — which is exactly why "
-    "the CLAP-of-generations metric was retracted. The fair comparison here is "
-    "protected vs clean, not either against real music. If they sound equally mediocre, "
-    "that means the effect is real in the model's distribution but below what a listener "
-    "notices — which is the honest reading of \"a fifth of the learning removed\".",
+    "**What you are hearing.** Both arms are mediocre, and neither sounds like the artist. "
+    "That is not a demo bug — it is the finding. A fine-tune that shifts output timbre "
+    "without learning musical structure produces exactly this: audio in roughly the right "
+    "register that is not the artist's music. The CLAP-of-generations metric flagged it "
+    "early (every config scored below base) and we overrode it; your ears and CLAP were "
+    "both right.",
     icon=":material/warning:",
 )
 
