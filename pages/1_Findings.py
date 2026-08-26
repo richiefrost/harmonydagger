@@ -86,6 +86,30 @@ st.warning(
 
 st.divider()
 
+# ---------------------------------------------------------------- control
+st.header("Control: is the style learning artist-specific?")
+cac = F["cross_artist_control"]
+st.caption(cac["what"])
+st.markdown(f"_Why we suspected it:_ {cac['why_suspected']}")
+st.markdown(f"**Design.** {cac['design']}")
+ca = cac["arms"]
+st.pyplot(
+    viz.hbar([a["training_data"] for a in ca], [a["heldout_loss_delta"] for a in ca],
+             dark=dark, fmt="{:+.4f}", highlight=1,
+             xlabel="held-out loss on 6th Sense (negative = learned this artist)"),
+    use_container_width=True,
+)
+k1, k2, k3 = st.columns(3)
+k1.metric("Separation", f"{cac['separation_nats']:.2f} nats")
+k2.metric("Control significance", f"{ca[1]['sigma']:.1f}\u03c3")
+k3.metric("Control clips improving", f"{ca[1]['clips_improving_pct']}%")
+st.success(cac["conclusion"], icon=":material/verified:")
+st.caption("Caveat: " + cac["caveat"])
+with st.expander("Table view \u00b7 cross-artist control"):
+    st.dataframe(pd.DataFrame(ca), hide_index=True, use_container_width=True)
+
+st.divider()
+
 # ---------------------------------------------------------------- inaudibility
 st.header("Is the protection inaudible?")
 ia = F["inaudibility"]

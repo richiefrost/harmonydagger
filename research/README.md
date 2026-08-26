@@ -47,6 +47,13 @@ defended) from an **inaudible** perturbation (audibility 0.0165, where white noi
 That is: an inaudible perturbation removed about a fifth of what a LoRA fine-tune learned
 about one artist. It is **not** prevention, and it is n=1 artist / 1 seed / 1 config.
 
+**The control passes.** The obvious confounder is that fine-tuning on *any* music might
+improve held-out loss on *any* music (generic domain adaptation), in which case the number
+measures nothing about style. Training on a **different** artist instead *degrades* held-out
+loss on 6th Sense by +0.7921 — 8.9 sigma, 0 of 18 clips improving, a **1.27-nat separation**
+from the matching arm. Same held-out clips and same base model in both runs (verified). So
+the style learning is genuinely artist-specific.
+
 ## What is in here
 
 | File | Purpose |
