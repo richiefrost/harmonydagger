@@ -143,3 +143,89 @@ The full experiment scripts (corpus builder, fine-tune harness, sweeps, replicat
 live outside this repo in the working tree used for the runs. `findings.json` records
 what each number came from. Everything ran on an M5 Pro / 64 GB / MPS with no cloud GPU:
 protection 16 s per clip (198 s for bi-level), one fine-tune ~4.4 min, generation 13 s.
+
+## Reproducing the measurements
+
+The dashboard shows results; these scripts produce them. All are sequential by necessity —
+one MPS device, and concurrent MusicGen fine-tunes trip `command buffer exited with error
+status`, which surfaces as a bogus EnCodec tensor-shape error rather than an OOM.
+
+### Read the gates first
+
+Two checks decide whether any protection number is interpretable. Run them **before**
+measuring protection, not after.
+
+| Script | Question | Pass condition |
+|---|---|---|
+| `structure_gate.py` | Did the fine-tune learn temporal **structure**, or only the artist's marginal token distribution? | `ratio < 0.3` |
+| `diagnose_memorization.py` | Is the model generalising, or reproducing memorised clips? | gen-vs-heldout must beat the realtrain-vs-heldout bar |
+
+`structure_gate.py` re-measures held-out loss with the token sequences **shuffled in time**.
+Shuffling destroys musical structure while preserving marginals exactly, so if shuffled
+improvement ≈ real improvement the model learned timbre, not style. **~9 configurations have
+now failed this gate** (effective batch 1→32, LoRA rank/targets, per-clip captions,
+codebook-1 loss weighting, full-decoder FT at the community recipe) — every one *degrades*
+codebook 1. That is why `style_protection` in `findings.json` is marked RETRACTED.
+
+```bash
+python research/structure_gate.py --accum 8 --lora-targets attn --steps 600     --save data/gate.json
+```
+
+### Measure protection on the threat model that works
+
+Single-track memorization is the one setting where the clean baseline reliably works
+(reproduction accuracy ~1.00, gate-passing every run).
+
+```bash
+# corpus: CC-licensed, ungated, ships artist/licence metadata
+python research/build_corpus.py --list
+python research/build_corpus.py --artist "6th Sense" --max-tracks 22     --out-dir data/catalogue/6th_sense_big
+
+# one measurement per process (MPS state accumulates across runs)
+python research/replicate_bilevel.py --track <t.wav> --objective clean    --seed 0
+python research/replicate_bilevel.py --track <t.wav> --objective baseline --seed 0
+python research/replicate_bilevel.py --track <t.wav> --objective bilevel  --seed 0
+python research/summarize_replication.py
+```
+
+`overnight.sh` drives the whole matrix and is **resumable** — every measurement writes its
+own file before the next starts, so a kill loses at most one. This matters: two multi-hour
+runs were destroyed by session teardown with nothing saved, and `nohup` does not survive it.
+
+### The sanity invariant
+
+`compare_arms.py` enforces the rule that caught two bad results:
+
+> A protected arm can never legitimately learn **more** than the clean arm. Protection can
+> only remove information. Any such row is a broken measurement, not a finding.
+
+It held across all 24 memorization measurements (0/22 negative gaps). The
+CLAP-on-generations and averaged-held-out-loss metrics both **violated** it — which is how
+the retracted 20.8% and the nonsensical −14.7% "efficacy" arose.
+
+### Metrics that were tried and are wrong
+
+Documented so nobody re-derives them. Each looked reasonable:
+
+| Metric | Why it fails |
+|---|---|
+| EnCodec token-change rate | Shifting audio by **one sample** (0.03 ms, inaudible, harmless) changes ~31% of tokens — comparable to the strongest protection |
+| CLAP similarity on generations | Reported "worse than base" for configs that held-out loss shows generalising; two noisy indirect steps over few samples |
+| Averaged held-out loss | Dominated by codebooks 2–4, whose residuals are near-random by construction (cb4 base 7.889 > uniform-over-2048 7.625) |
+
+The through-line: **only codebook 1 carries perceptual content**, so any aggregate over
+codebooks measures mostly noise. Judge on codebook 1, and confirm audibility with ears
+(doc §8 rule 2).
+
+### Open question: is bi-level actually better, or just louder?
+
+`gap` correlates with perturbation magnitude at **r = +0.88**, and bi-level reaches
+`delta_rms` 0.0107 where the baseline objective at `note_frac` 0.06 tops out at 0.0055. So
+bi-level's ~2× advantage may be amplitude rather than a smarter objective.
+
+```bash
+./research/matched_magnitude.sh   # baseline at note_frac 0.10 / 0.15 / 0.25
+```
+
+If the baseline reaches bi-level's gap at comparable **audibility**, bi-level adds nothing
+and should be dropped. Resolve this before building on any bi-level number.

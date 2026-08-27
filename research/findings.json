@@ -111,6 +111,87 @@
       "steps_200": 78.0,
       "steps_800": 8.7,
       "note": "The gap SHRINKS as training converges -- a perturbation not optimized against training is one training erodes. Doc \u00a74.1 reports the opposite (a plateau at 66-69% out to 3200 steps), which is what led us to the missing bi-level step."
+    },
+    "replication_n24": {
+      "what": "8 tracks x 3 seeds, 800 steps. Supersedes replication_n3, which was too noisy to act on.",
+      "baseline": {
+        "n": 24,
+        "mean_gap": 7.5,
+        "sd": 1.5,
+        "range": [
+          4.4,
+          10.0
+        ],
+        "mean_audibility": 0.0129
+      },
+      "bilevel": {
+        "n": 22,
+        "mean_gap": 13.8,
+        "sd": 9.9,
+        "range": [
+          0.2,
+          27.7
+        ],
+        "mean_audibility": 0.0116
+      },
+      "paired_difference": {
+        "mean_pts": 6.32,
+        "sem": 2.23,
+        "abs_mean_over_sem": 2.8,
+        "bilevel_beat_baseline": "12/22",
+        "bilevel_no_protection_lt3pts": "3/22"
+      },
+      "per_codebook_mean_gap": {
+        "baseline": [
+          3.4,
+          6.3,
+          8.9,
+          11.2
+        ],
+        "bilevel": [
+          6.4,
+          11.2,
+          16.2,
+          21.5
+        ]
+      },
+      "bimodal": {
+        "what": "Bi-level is BIMODAL, not merely noisy. Two clusters with almost nothing between.",
+        "worked": {
+          "n": 12,
+          "mean_gap": 22.3
+        },
+        "thrashed": {
+          "n": 10,
+          "mean_gap": 3.6
+        },
+        "seed_not_track_dependent": "02_just_fine gave 27.5 / 6.6 / 0.2 across seeds 0/1/2",
+        "cause": "The alternating bi-level optimisation is unstable; defender CE oscillates across rounds (1.87 -> 0.42 -> 2.49 -> 4.52 -> 0.83).",
+        "fix_candidates": [
+          "average delta over the final rounds instead of taking the last",
+          "lower the defender learning rate",
+          "more rounds with fewer steps each"
+        ]
+      },
+      "magnitude_confound": {
+        "what": "OPEN QUESTION that qualifies the whole bi-level result.",
+        "corr_gap_vs_delta_rms": {
+          "bilevel": 0.882,
+          "baseline": 0.816
+        },
+        "delta_rms": {
+          "bilevel_worked": 0.007218,
+          "bilevel_thrashed": 0.003325,
+          "baseline_nf006_max": 0.005532
+        },
+        "concern": "Gap is almost entirely predicted by perturbation MAGNITUDE, not by which objective produced it. Bi-level may simply produce a louder perturbation rather than a smarter one -- its delta_rms reaches 0.0107 where the baseline objective at note_frac 0.06 tops out at 0.0055.",
+        "test_in_flight": "Raise the baseline objective's note_frac (0.10 / 0.15 / 0.25) until magnitude matches bi-level, then compare gap AND audibility. If baseline reaches ~22 pts at similar audibility, bi-level adds nothing beyond amplitude."
+      },
+      "sanity_invariant": {
+        "rule": "A protected arm can never legitimately learn MORE than the clean arm: protection can only remove information. Any such row is a broken measurement, not a finding.",
+        "result": "HELD: 0/22 measurements showed protection helping the mimic. Every gap was positive.",
+        "contrast": "The CLAP-on-generations and averaged-held-out-loss metrics both VIOLATED this, which is how the retracted 20.8% and the -14.7% 'efficacy' arose."
+      }
     }
   },
   "style_protection": {

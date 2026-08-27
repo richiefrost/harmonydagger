@@ -149,17 +149,51 @@ st.pyplot(
              xlabel="reproduction-accuracy gap (percentage points)"),
     use_container_width=True,
 )
-rep = sm["replication_n3"]
-st.warning(rep["caveat"], icon=":material/warning:")
-with st.expander("Table view · replication (n=3 tracks)"):
+rep = sm.get("replication_n24") or sm["replication_n3"]
+_arms = {k: v for k, v in rep.items() if isinstance(v, dict) and "mean_gap" in v}
+
+if "bimodal" in rep:
+    bm = rep["bimodal"]
+    st.error(
+        f"**Bi-level is bimodal, not merely noisy.** {bm['worked']['n']} runs cluster at "
+        f"{bm['worked']['mean_gap']} pts and {bm['thrashed']['n']} at "
+        f"{bm['thrashed']['mean_gap']} pts, with almost nothing between — and it is "
+        f"seed-dependent, not track-dependent ({bm['seed_not_track_dependent']}). "
+        f"{bm['cause']}",
+        icon=":material/warning:",
+    )
+    pd_ = rep["paired_difference"]
+    c1, c2, c3 = st.columns(3)
+    c1.metric("paired difference", f"+{pd_['mean_pts']} pts", f"sem {pd_['sem']}")
+    c2.metric("bi-level beat baseline", pd_["bilevel_beat_baseline"])
+    c3.metric("bi-level gave <3 pts", pd_["bilevel_no_protection_lt3pts"])
+
+if "magnitude_confound" in rep:
+    mc = rep["magnitude_confound"]
+    st.warning(
+        f"**Open question — is bi-level better, or just louder?** {mc['concern']} "
+        f"(gap vs perturbation magnitude: r = +{mc['corr_gap_vs_delta_rms']['bilevel']}). "
+        f"{mc['test_in_flight']}",
+        icon=":material/help:",
+    )
+
+if "sanity_invariant" in rep:
+    si = rep["sanity_invariant"]
+    st.success(f"**Sanity invariant.** {si['rule']} — {si['result']}",
+               icon=":material/check_circle:")
+
+with st.expander(f"Table view · replication (n={sum(v['n'] for v in _arms.values())} measurements)"):
     st.dataframe(
         pd.DataFrame([
             {"objective": k, "n": v["n"], "mean gap (pts)": v["mean_gap"], "sd": v["sd"],
-             "range": f"{v['range'][0]}–{v['range'][1]}"}
-            for k, v in rep.items() if isinstance(v, dict)
+             "range": f"{v['range'][0]}–{v['range'][1]}",
+             "mean audibility": v.get("mean_audibility")}
+            for k, v in _arms.items()
         ]),
         hide_index=True, use_container_width=True,
     )
+    if "caveat" in rep:
+        st.caption(rep["caveat"])
 
 st.subheader("…but the damage lands in the wrong codebooks")
 st.caption(
