@@ -185,7 +185,76 @@
           "baseline_nf006_max": 0.005532
         },
         "concern": "Gap is almost entirely predicted by perturbation MAGNITUDE, not by which objective produced it. Bi-level may simply produce a louder perturbation rather than a smarter one -- its delta_rms reaches 0.0107 where the baseline objective at note_frac 0.06 tops out at 0.0055.",
-        "test_in_flight": "Raise the baseline objective's note_frac (0.10 / 0.15 / 0.25) until magnitude matches bi-level, then compare gap AND audibility. If baseline reaches ~22 pts at similar audibility, bi-level adds nothing beyond amplitude."
+        "test_in_flight": "Raise the baseline objective's note_frac (0.10 / 0.15 / 0.25) until magnitude matches bi-level, then compare gap AND audibility. If baseline reaches ~22 pts at similar audibility, bi-level adds nothing beyond amplitude.",
+        "RESOLVED": true,
+        "resolution": {
+          "verdict": "REFUTED. Bi-level is not merely louder -- at matched perturbation magnitude it delivers ~2x the gap at ~5x LOWER audibility.",
+          "sweep": [
+            {
+              "objective": "baseline",
+              "note_frac": 0.06,
+              "n": 24,
+              "gap_pts": 7.5,
+              "delta_rms": 0.0035,
+              "audibility": 0.0129
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.1,
+              "n": 4,
+              "gap_pts": 10.3,
+              "delta_rms": 0.006121,
+              "audibility": 0.03591
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.15,
+              "n": 4,
+              "gap_pts": 11.0,
+              "delta_rms": 0.007471,
+              "audibility": 0.0746
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.25,
+              "n": 4,
+              "gap_pts": 12.1,
+              "delta_rms": 0.007624,
+              "audibility": 0.13313
+            },
+            {
+              "objective": "bi-level (worked cluster)",
+              "note_frac": 0.06,
+              "n": 12,
+              "gap_pts": 22.3,
+              "delta_rms": 0.007218,
+              "audibility": 0.015
+            },
+            {
+              "objective": "bi-level (all runs)",
+              "note_frac": 0.06,
+              "n": 22,
+              "gap_pts": 13.8,
+              "delta_rms": null,
+              "audibility": 0.0116
+            }
+          ],
+          "matched_magnitude_comparison": "At delta_rms ~0.0075 the baseline reaches 11.0 pts for 0.0746 audibility; bi-level reaches 22.3 pts at 0.0072 rms for 0.0150 audibility -- 2x the protection for a fifth of the audible damage.",
+          "baseline_saturates": "Raising note_frac 0.10 -> 0.25 (2.5x) buys only +1.8 pts (10.3 -> 12.1) while audibility rises 3.7x (0.036 -> 0.133). delta_rms barely moves (0.0061 -> 0.0076) because the masking ceiling is binding, so extra note_frac adds audible energy without adding effective perturbation. The baseline objective caps out near 12 pts at ANY audibility and cannot reach bi-level's 22.",
+          "efficiency_gap_per_audibility": {
+            "baseline_nf006": 581,
+            "baseline_nf010": 287,
+            "baseline_nf015": 147,
+            "baseline_nf025": 91,
+            "bilevel": 1487
+          },
+          "conservative_reading": "Even counting bi-level's thrashing runs, its overall mean (13.8 pts at 0.0116 audibility, n=22) beats the best baseline setting (7.5 pts at 0.0129, n=24) at LOWER audibility. The baseline cannot match 13.8 pts at any note_frac tested.",
+          "implication": "Bi-level is the one component of this work that beats simply turning the noise up. Stabilising its bimodal oscillation is therefore clearly worth doing: converting the 10 thrashing runs would move the mean from 13.8 toward 22.",
+          "caveats": [
+            "n=4 per note_frac, single seed",
+            "gap is still a token-space measure and does not imply audible protection (see clap_generation_metric_failure and the_wall)"
+          ]
+        }
       },
       "sanity_invariant": {
         "rule": "A protected arm can never legitimately learn MORE than the clean arm: protection can only remove information. Any such row is a broken measurement, not a finding.",

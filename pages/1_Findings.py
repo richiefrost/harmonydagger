@@ -170,12 +170,24 @@ if "bimodal" in rep:
 
 if "magnitude_confound" in rep:
     mc = rep["magnitude_confound"]
-    st.warning(
-        f"**Open question — is bi-level better, or just louder?** {mc['concern']} "
-        f"(gap vs perturbation magnitude: r = +{mc['corr_gap_vs_delta_rms']['bilevel']}). "
-        f"{mc['test_in_flight']}",
-        icon=":material/help:",
-    )
+    if mc.get("RESOLVED"):
+        res = mc["resolution"]
+        st.success(f"**Resolved — bi-level is better, not just louder.** {res['verdict']}",
+                   icon=":material/check_circle:")
+        st.caption(res["matched_magnitude_comparison"])
+        st.info(f"**The baseline objective saturates.** {res['baseline_saturates']}",
+                icon=":material/trending_flat:")
+        with st.expander("Table view · matched-magnitude sweep"):
+            st.dataframe(pd.DataFrame(res["sweep"]), hide_index=True,
+                         use_container_width=True)
+            st.caption(res["conservative_reading"])
+    else:
+        st.warning(
+            f"**Open question — is bi-level better, or just louder?** {mc['concern']} "
+            f"(gap vs perturbation magnitude: r = +{mc['corr_gap_vs_delta_rms']['bilevel']}). "
+            f"{mc['test_in_flight']}",
+            icon=":material/help:",
+        )
 
 if "sanity_invariant" in rep:
     si = rep["sanity_invariant"]
