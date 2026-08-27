@@ -44,7 +44,22 @@ st.caption(
     "inline, so nothing here overstates what was measured."
 )
 
-st.subheader("Bi-level protection: ~2x the effect, at lower audibility")
+av = F["single_track_memorization"]["replication_n24"]["absolute_vs_original"]
+st.subheader("How much protection does an artist actually get?")
+st.caption(av["what"])
+st.dataframe(
+    pd.DataFrame(av["arms"]).rename(columns={
+        "trained_on": "the mimic trained on",
+        "reproduces_real_song_pct": "reproduces the real song (%)",
+        "lost_vs_original_pts": "lost vs original (pts)"}),
+    hide_index=True, use_container_width=True,
+)
+st.warning(f"**{av['headline']}**", icon=":material/balance:")
+st.caption(av["and_it_is_generous"])
+
+st.divider()
+st.subheader("Comparing the two protection objectives: bi-level is ~2x, at lower audibility")
+st.caption(av["why_the_2x_framing_misleads"])
 sm = F["single_track_memorization"]
 st.markdown(
     "The doc's objective optimizes through the **encoder only, never the LM**, while it "

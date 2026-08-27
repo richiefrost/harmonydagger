@@ -260,6 +260,33 @@
         "rule": "A protected arm can never legitimately learn MORE than the clean arm: protection can only remove information. Any such row is a broken measurement, not a finding.",
         "result": "HELD: 0/22 measurements showed protection helping the mimic. Every gap was positive.",
         "contrast": "The CLAP-on-generations and averaged-held-out-loss metrics both VIOLATED this, which is how the retracted 20.8% and the -14.7% 'efficacy' arose."
+      },
+      "absolute_vs_original": {
+        "what": "The reference that matters is the ORIGINAL, unprotected file -- not a rival protection method. This is the artist's question: if I release protected audio, how much worse is a mimic at reproducing my actual song?",
+        "reference": "A model trained on the original reproduces it at 100.0% (n=24).",
+        "arms": [
+          {
+            "trained_on": "the original (no protection)",
+            "n": 24,
+            "reproduces_real_song_pct": 100.0,
+            "lost_vs_original_pts": 0.0
+          },
+          {
+            "trained_on": "doc's objective (protected)",
+            "n": 24,
+            "reproduces_real_song_pct": 92.5,
+            "lost_vs_original_pts": 7.5
+          },
+          {
+            "trained_on": "bi-level (protected)",
+            "n": 22,
+            "reproduces_real_song_pct": 86.2,
+            "lost_vs_original_pts": 13.8
+          }
+        ],
+        "headline": "The strongest protection measured still leaves a mimic reproducing 86% of the real song. That is a measurable dent, not protection.",
+        "why_the_2x_framing_misleads": "Reporting 'bi-level is 2x the baseline objective' benchmarks one protection method against another and makes a 14-point dent sound like a success. Both framings use the same data, but only the absolute one answers what an artist would ask.",
+        "and_it_is_generous": "The 13.8 points sit mostly in codebooks 2-4, which are perceptually secondary. Codebook 1 -- the one that decides whether the output SOUNDS like the song -- loses only ~6.4 points, which is why listeners cannot tell the two generations apart."
       }
     }
   },
