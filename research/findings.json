@@ -1,0 +1,537 @@
+{
+  "_readme": "Measured results from the music-model protection work. Every number here came from a run on an M5 Pro / MPS; nothing is estimated. Section keys map to the research doc where applicable.",
+  "inaudibility": {
+    "metric": "fraction of perturbation energy above the clean signal's simultaneous-masking threshold (doc \u00a73.3). 0.000 = fully masked.",
+    "note": "Validated against human ears in the doc; SNR and 'energy above absolute threshold' were both tried and both disagreed with listeners.",
+    "levels": [
+      {
+        "level": "A",
+        "note_frac": 0.02,
+        "audibility": 0.0
+      },
+      {
+        "level": "B",
+        "note_frac": 0.06,
+        "audibility": 0.031
+      },
+      {
+        "level": "C",
+        "note_frac": 0.15,
+        "audibility": 0.0783
+      }
+    ],
+    "references": [
+      {
+        "what": "fully masked perturbation",
+        "audibility": 0.0
+      },
+      {
+        "what": "white noise",
+        "audibility": 0.735
+      },
+      {
+        "what": "high-frequency noise",
+        "audibility": 0.814
+      }
+    ],
+    "catalogue_mean": 0.0165,
+    "bilevel_max_mode": 0.0024
+  },
+  "single_track_memorization": {
+    "what": "Fine-tune MusicGen-small on ONE track, then measure teacher-forced reproduction accuracy on the CLEAN track. Doc \u00a73.4.",
+    "track": "FMA / 6th Sense instrumental, 8s excerpt, 800 steps, seed 0",
+    "arms": [
+      {
+        "objective": "baseline (encoder-only, doc \u00a75.2)",
+        "audibility": 0.0056,
+        "gap_pts": 8.7,
+        "per_codebook_gap": [
+          4.3,
+          7.5,
+          10.3,
+          12.7
+        ]
+      },
+      {
+        "objective": "bi-level, error-minimizing",
+        "audibility": 0.0081,
+        "gap_pts": 29.0,
+        "per_codebook_gap": [
+          10.8,
+          24.3,
+          38.0,
+          43.0
+        ]
+      },
+      {
+        "objective": "bi-level, error-maximizing",
+        "audibility": 0.0024,
+        "gap_pts": 28.0,
+        "per_codebook_gap": [
+          11.0,
+          24.8,
+          34.8,
+          41.5
+        ]
+      },
+      {
+        "objective": "research doc, n=60 mean",
+        "audibility": null,
+        "gap_pts": 26.7,
+        "per_codebook_gap": [
+          17.8,
+          43.8,
+          51.5,
+          59.3
+        ]
+      }
+    ],
+    "replication_n3": {
+      "baseline": {
+        "n": 3,
+        "mean_gap": 8.6,
+        "sd": 1.1,
+        "range": [
+          7.7,
+          10.2
+        ]
+      },
+      "bilevel": {
+        "n": 3,
+        "mean_gap": 19.6,
+        "sd": 9.6,
+        "range": [
+          6.1,
+          27.1
+        ]
+      },
+      "caveat": "bi-level is 2.27x better on average but wildly inconsistent -- it was WORSE than baseline on one of three tracks. The alternating game oscillates rather than converging."
+    },
+    "convergence_warning": {
+      "steps_200": 78.0,
+      "steps_800": 8.7,
+      "note": "The gap SHRINKS as training converges -- a perturbation not optimized against training is one training erodes. Doc \u00a74.1 reports the opposite (a plateau at 66-69% out to 3200 steps), which is what led us to the missing bi-level step."
+    },
+    "replication_n24": {
+      "what": "8 tracks x 3 seeds, 800 steps. Supersedes replication_n3, which was too noisy to act on.",
+      "baseline": {
+        "n": 24,
+        "mean_gap": 7.5,
+        "sd": 1.5,
+        "range": [
+          4.4,
+          10.0
+        ],
+        "mean_audibility": 0.0129
+      },
+      "bilevel": {
+        "n": 22,
+        "mean_gap": 13.8,
+        "sd": 9.9,
+        "range": [
+          0.2,
+          27.7
+        ],
+        "mean_audibility": 0.0116
+      },
+      "paired_difference": {
+        "mean_pts": 6.32,
+        "sem": 2.23,
+        "abs_mean_over_sem": 2.8,
+        "bilevel_beat_baseline": "12/22",
+        "bilevel_no_protection_lt3pts": "3/22"
+      },
+      "per_codebook_mean_gap": {
+        "baseline": [
+          3.4,
+          6.3,
+          8.9,
+          11.2
+        ],
+        "bilevel": [
+          6.4,
+          11.2,
+          16.2,
+          21.5
+        ]
+      },
+      "bimodal": {
+        "what": "Bi-level is BIMODAL, not merely noisy. Two clusters with almost nothing between.",
+        "worked": {
+          "n": 12,
+          "mean_gap": 22.3
+        },
+        "thrashed": {
+          "n": 10,
+          "mean_gap": 3.6
+        },
+        "seed_not_track_dependent": "02_just_fine gave 27.5 / 6.6 / 0.2 across seeds 0/1/2",
+        "cause": "The alternating bi-level optimisation is unstable; defender CE oscillates across rounds (1.87 -> 0.42 -> 2.49 -> 4.52 -> 0.83).",
+        "fix_candidates": [
+          "average delta over the final rounds instead of taking the last",
+          "lower the defender learning rate",
+          "more rounds with fewer steps each"
+        ]
+      },
+      "magnitude_confound": {
+        "what": "OPEN QUESTION that qualifies the whole bi-level result.",
+        "corr_gap_vs_delta_rms": {
+          "bilevel": 0.882,
+          "baseline": 0.816
+        },
+        "delta_rms": {
+          "bilevel_worked": 0.007218,
+          "bilevel_thrashed": 0.003325,
+          "baseline_nf006_max": 0.005532
+        },
+        "concern": "Gap is almost entirely predicted by perturbation MAGNITUDE, not by which objective produced it. Bi-level may simply produce a louder perturbation rather than a smarter one -- its delta_rms reaches 0.0107 where the baseline objective at note_frac 0.06 tops out at 0.0055.",
+        "test_in_flight": "Raise the baseline objective's note_frac (0.10 / 0.15 / 0.25) until magnitude matches bi-level, then compare gap AND audibility. If baseline reaches ~22 pts at similar audibility, bi-level adds nothing beyond amplitude.",
+        "RESOLVED": true,
+        "resolution": {
+          "verdict": "REFUTED. Bi-level is not merely louder -- at matched perturbation magnitude it delivers ~2x the gap at ~5x LOWER audibility.",
+          "sweep": [
+            {
+              "objective": "baseline",
+              "note_frac": 0.06,
+              "n": 24,
+              "gap_pts": 7.5,
+              "delta_rms": 0.0035,
+              "audibility": 0.0129
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.1,
+              "n": 4,
+              "gap_pts": 10.3,
+              "delta_rms": 0.006121,
+              "audibility": 0.03591
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.15,
+              "n": 4,
+              "gap_pts": 11.0,
+              "delta_rms": 0.007471,
+              "audibility": 0.0746
+            },
+            {
+              "objective": "baseline",
+              "note_frac": 0.25,
+              "n": 4,
+              "gap_pts": 12.1,
+              "delta_rms": 0.007624,
+              "audibility": 0.13313
+            },
+            {
+              "objective": "bi-level (worked cluster)",
+              "note_frac": 0.06,
+              "n": 12,
+              "gap_pts": 22.3,
+              "delta_rms": 0.007218,
+              "audibility": 0.015
+            },
+            {
+              "objective": "bi-level (all runs)",
+              "note_frac": 0.06,
+              "n": 22,
+              "gap_pts": 13.8,
+              "delta_rms": null,
+              "audibility": 0.0116
+            }
+          ],
+          "matched_magnitude_comparison": "At delta_rms ~0.0075 the baseline reaches 11.0 pts for 0.0746 audibility; bi-level reaches 22.3 pts at 0.0072 rms for 0.0150 audibility -- 2x the protection for a fifth of the audible damage.",
+          "baseline_saturates": "Raising note_frac 0.10 -> 0.25 (2.5x) buys only +1.8 pts (10.3 -> 12.1) while audibility rises 3.7x (0.036 -> 0.133). delta_rms barely moves (0.0061 -> 0.0076) because the masking ceiling is binding, so extra note_frac adds audible energy without adding effective perturbation. The baseline objective caps out near 12 pts at ANY audibility and cannot reach bi-level's 22.",
+          "efficiency_gap_per_audibility": {
+            "baseline_nf006": 581,
+            "baseline_nf010": 287,
+            "baseline_nf015": 147,
+            "baseline_nf025": 91,
+            "bilevel": 1487
+          },
+          "conservative_reading": "Even counting bi-level's thrashing runs, its overall mean (13.8 pts at 0.0116 audibility, n=22) beats the best baseline setting (7.5 pts at 0.0129, n=24) at LOWER audibility. The baseline cannot match 13.8 pts at any note_frac tested.",
+          "implication": "Bi-level is the one component of this work that beats simply turning the noise up. Stabilising its bimodal oscillation is therefore clearly worth doing: converting the 10 thrashing runs would move the mean from 13.8 toward 22.",
+          "caveats": [
+            "n=4 per note_frac, single seed",
+            "gap is still a token-space measure and does not imply audible protection (see clap_generation_metric_failure and the_wall)"
+          ]
+        }
+      },
+      "sanity_invariant": {
+        "rule": "A protected arm can never legitimately learn MORE than the clean arm: protection can only remove information. Any such row is a broken measurement, not a finding.",
+        "result": "HELD: 0/22 measurements showed protection helping the mimic. Every gap was positive.",
+        "contrast": "The CLAP-on-generations and averaged-held-out-loss metrics both VIOLATED this, which is how the retracted 20.8% and the -14.7% 'efficacy' arose."
+      },
+      "absolute_vs_original": {
+        "what": "The reference that matters is the ORIGINAL, unprotected file -- not a rival protection method. This is the artist's question: if I release protected audio, how much worse is a mimic at reproducing my actual song?",
+        "reference": "A model trained on the original reproduces it at 100.0% (n=24).",
+        "arms": [
+          {
+            "trained_on": "the original (no protection)",
+            "n": 24,
+            "reproduces_real_song_pct": 100.0,
+            "lost_vs_original_pts": 0.0
+          },
+          {
+            "trained_on": "doc's objective (protected)",
+            "n": 24,
+            "reproduces_real_song_pct": 92.5,
+            "lost_vs_original_pts": 7.5
+          },
+          {
+            "trained_on": "bi-level (protected)",
+            "n": 22,
+            "reproduces_real_song_pct": 86.2,
+            "lost_vs_original_pts": 13.8
+          }
+        ],
+        "headline": "The strongest protection measured still leaves a mimic reproducing 86% of the real song. That is a measurable dent, not protection.",
+        "why_the_2x_framing_misleads": "Reporting 'bi-level is 2x the baseline objective' benchmarks one protection method against another and makes a 14-point dent sound like a success. Both framings use the same data, but only the absolute one answers what an artist would ask.",
+        "and_it_is_generous": "The 13.8 points sit mostly in codebooks 2-4, which are perceptually secondary. Codebook 1 -- the one that decides whether the output SOUNDS like the song -- loses only ~6.4 points, which is why listeners cannot tell the two generations apart."
+      }
+    }
+  },
+  "style_protection": {
+    "what": "THE HEADLINE. Fine-tune a LoRA on an artist's catalogue, then measure held-out token loss on UNSEEN tracks by the same artist. Doc \u00a76's untested catalogue scale.",
+    "config": "LoRA r=32, lr 3e-4, 1200 steps, 48 training windows (384s), 18 held-out clips from 6 held-out tracks, protection = doc \u00a75.2 variance objective at level B",
+    "arms": [
+      {
+        "arm": "clean fine-tune",
+        "heldout_loss_delta": -0.476,
+        "sem": 0.0861
+      },
+      {
+        "arm": "protected fine-tune",
+        "heldout_loss_delta": -0.3768,
+        "sem": 0.0996
+      }
+    ],
+    "paired_defence": {
+      "per_clip": [
+        0.114,
+        0.149,
+        0.072,
+        0.097,
+        0.091,
+        0.073,
+        0.019,
+        0.052,
+        0.022,
+        0.193,
+        0.121,
+        0.028,
+        0.036,
+        0.039,
+        0.028,
+        0.194,
+        0.205,
+        0.253
+      ],
+      "mean": 0.0992,
+      "sem": 0.0171,
+      "t": 5.79,
+      "clips_defended": 18,
+      "n": 18,
+      "p_two_sided": 0.0
+    },
+    "efficacy_pct": 20.8,
+    "limits": [
+      "n=1 artist, 1 seed, 1 protection config -- needs replication",
+      "uses the WEAKER variance objective; bi-level on 66 windows costs ~3.6h vs ~18min and was ~3x better on tokens",
+      "measured on held-out likelihood; whether a 20.8% likelihood defence is AUDIBLE is unresolved"
+    ],
+    "RETRACTED": true,
+    "retraction": {
+      "verdict": "RETRACTED as a style result. The statistics are sound; the thing being measured is not style.",
+      "reason": "The shuffle gate shows the baseline learned marginal token statistics, not musical structure. The 20.8% is protecting a timbre prior.",
+      "explains": [
+        "training loss barely descending (7.14 -> 6.76) while held-out loss improved MORE",
+        "generations worse than the base model at every guidance scale (CFG ruled out: lower guidance is worse -- 1.0 -> +0.334, 1.5 -> +0.402, 3.0 -> +0.473, base +0.525)",
+        "the cross-artist control passing anyway -- marginals differ between artists, so that control cannot separate timbre from style"
+      ]
+    }
+  },
+  "failed_coarse_targeting": {
+    "what": "Doc \u00a77 Tier-1 #1: re-target the objective at codebook 1 (the perceptually load-bearing one) instead of the pooled latent.",
+    "input_token_damage_cb1": {
+      "baseline": 2.7,
+      "coarse_targeted": 7.8
+    },
+    "learned_gap_cb1": {
+      "baseline": 4.3,
+      "coarse_targeted": 1.7
+    },
+    "conclusion": "3x more coarse damage at the INPUT, yet the trained model reproduced coarse structure BETTER. Input-token damage was ANTI-correlated with learned damage for codebook 1."
+  },
+  "failed_decoy": {
+    "what": "The Mist/Nightshade approach: push the latent toward a DIFFERENT song so the model learns the wrong thing.",
+    "latent_gap_start": 17.609,
+    "sweep": [
+      {
+        "constraint": "level B (inaudible)",
+        "audibility": 0.004,
+        "gap_closed_pct": 1.0
+      },
+      {
+        "constraint": "no ceiling, 600 steps",
+        "audibility": 0.93,
+        "gap_closed_pct": 29.0
+      }
+    ],
+    "encodec_roundtrip_snr_db": 9.4,
+    "encodec_compression": 5.0,
+    "sd_vae_compression": 48.0,
+    "conclusion": "EnCodec's latent is a NEAR-INVERTIBLE ACOUSTIC code at only 5x compression; Stable Diffusion's VAE is 48x and semantically lossy. latent(A) ~ latent(B) essentially requires A ~ B, so impersonation costs as much distortion as replacing the audio. Mist's mechanism does not transfer."
+  },
+  "metric_calibration": {
+    "what": "Why we stopped optimizing token-space gap.",
+    "one_sample_shift_token_change_pct": 30.7,
+    "note": "Shifting the audio by ONE SAMPLE (0.03 ms -- inaudible, harmless) changes ~31% of EnCodec tokens, comparable to our strongest protection. A metric a 1-sample shift can fake is not measuring protection. Confirmed by ear: a 29-pt token gap produced no audible difference (log-mel 4.35 vs 4.34).",
+    "logmel_from_original": {
+      "clean_trained_gen": 4.35,
+      "protected_trained_gen": 4.41,
+      "doc_reference": {
+        "clean": 4.17,
+        "protected": 4.02,
+        "identical": 0.0,
+        "unrelated_track": 21.66
+      }
+    }
+  },
+  "clap_generation_metric_failure": {
+    "what": "CLAP similarity of GENERATIONS to held-out artist tracks -- the metric we tried first and abandoned.",
+    "style_arms": {
+      "base": 0.5253,
+      "clean": 0.4759,
+      "protected": 0.4706
+    },
+    "sweep_lift_over_base": [
+      {
+        "config": "full decoder, 900 steps",
+        "trainable_M": 419.6,
+        "lift": -0.0222
+      },
+      {
+        "config": "LoRA r=16, lr 1e-3",
+        "trainable_M": 3.15,
+        "lift": -0.0368
+      },
+      {
+        "config": "LoRA r=32, lr 1e-3",
+        "trainable_M": 6.29,
+        "lift": -0.0495
+      },
+      {
+        "config": "LoRA r=32, lr 3e-4",
+        "trainable_M": 6.29,
+        "lift": -0.0714
+      },
+      {
+        "config": "LoRA r=64, lr 1e-3",
+        "trainable_M": 12.58,
+        "lift": -0.095
+      },
+      {
+        "config": "LoRA r=64, lr 3e-4",
+        "trainable_M": 12.58,
+        "lift": -0.1223
+      }
+    ],
+    "conclusion": "Every config scored BELOW base, including the r=32 config that provably generalizes at 5.5 sigma on held-out loss. Generation + CLAP on a handful of samples is two noisy indirect steps. The metric was broken, not the training.",
+    "clap_discrimination_check": {
+      "within_6th_sense": 0.699,
+      "within_biedermann": 0.94,
+      "across_artists": 0.46,
+      "note": "CLAP DOES discriminate artists on real audio (separation +0.42) -- it fails only when applied to a handful of generated samples."
+    }
+  },
+  "performance": {
+    "machine": "Apple M5 Pro, 64 GB, MPS",
+    "items": [
+      {
+        "op": "protection, variance objective (80 steps, 8s clip)",
+        "seconds": 16
+      },
+      {
+        "op": "protection, bi-level (5 rounds)",
+        "seconds": 198
+      },
+      {
+        "op": "one fine-tune, 800 steps full decoder",
+        "seconds": 264
+      },
+      {
+        "op": "MusicGen generation, 8s",
+        "seconds": 13
+      }
+    ],
+    "note": "No cloud GPU needed. Fine-tuning musicgen-small uses ~4.1 GB of 64 GB."
+  },
+  "cross_artist_control": {
+    "what": "Rules out the biggest confounder: maybe fine-tuning on ANY music improves MusicGen's held-out loss on ANY music (domain/prompt adaptation), in which case the protection number measures nothing about style.",
+    "why_suspected": "The LoRA training loss barely descends (6.87 -> 6.45) while held-out loss improves by a comparable 0.476 -- consistent with generic adaptation rather than artist learning.",
+    "design": "Train on a DIFFERENT artist (Peter Biedermann, solo acoustic guitar), then score the SAME 6th Sense held-out clips against the SAME base model. Verified: identical held-out clips and base losses in both runs.",
+    "arms": [
+      {
+        "training_data": "6th Sense (matching artist)",
+        "heldout_loss_delta": -0.476,
+        "sem": 0.0861,
+        "sigma": 5.5,
+        "clips_improving_pct": 78
+      },
+      {
+        "training_data": "Peter Biedermann (different artist)",
+        "heldout_loss_delta": 0.7921,
+        "sem": 0.0892,
+        "sigma": 8.9,
+        "clips_improving_pct": 0
+      }
+    ],
+    "separation_nats": 1.268,
+    "conclusion": "Training on the matching artist IMPROVES held-out likelihood; a different artist DEGRADES it, at 8.9 sigma with zero of 18 clips improving. The style learning is genuinely artist-specific, so the protection result is measuring what it claims to.",
+    "caveat": "The control trained on 18 clips vs 48 for the matching arm, so clip count and steps-per-clip differ. The direction is far too strong for that to explain a 1.27-nat separation, but a size-matched control would be tidier.",
+    "status": "NECESSARY BUT NOT SUFFICIENT",
+    "superseded_note": "This control rules out generic domain adaptation, but NOT the timbre explanation: marginal token distributions differ between artists, so an artist-specific timbre prior passes this control too. The shuffle gate is the test that separates them."
+  },
+  "shuffle_gate": {
+    "what": "The decisive test for whether a fine-tune learned STYLE or merely TIMBRE STATISTICS. Score held-out clips normally, then score them with the token sequence SHUFFLED IN TIME -- which destroys all musical structure while preserving the marginal token distribution exactly.",
+    "how_to_read": "shuffled improvement ~= real -> learned marginals only (a timbre prior). shuffled << real -> learned genuine temporal structure.",
+    "runs": [
+      {
+        "config": "LoRA r=32 q/v, 1200 steps, 18 clips",
+        "real": -0.476,
+        "shuffled": -0.8337,
+        "ratio": 1.75,
+        "real_improving_pct": 78,
+        "shuffled_improving_pct": 100,
+        "n": 18
+      },
+      {
+        "config": "LoRA r=32 ALL targets, 3600 steps, 36 clips",
+        "real": -0.4443,
+        "shuffled": -0.9485,
+        "ratio": 2.13,
+        "real_improving_pct": 86,
+        "shuffled_improving_pct": 97,
+        "n": 36
+      }
+    ],
+    "conclusion": "The gain does not merely survive destroying temporal structure -- it GROWS, by 1.75x and 2.13x across two configs. The fine-tune learned the artist's marginal token distribution (timbre and register) and nothing about their music.",
+    "status": "This is now a required GATE. If shuffled improvement is comparable to real, the baseline is not learning style and no protection number derived from it means anything."
+  },
+  "the_wall": {
+    "what": "The central negative result of the week: we could not build a style-mimicry baseline at catalogue scale.",
+    "two_ends": [
+      {
+        "regime": "full-decoder fine-tune, 6 clips",
+        "outcome": "learns structure, but by MEMORIZING (0.93 CLAP similarity to an individual training clip)"
+      },
+      {
+        "regime": "LoRA, 48 clips, 1200-3600 steps",
+        "outcome": "learns only marginals -- the shuffle gate fails at 1.75-2.13x"
+      }
+    ],
+    "no_middle_found": true,
+    "plausible_reason": "Data scale. 22 tracks x 30 s is ~11 minutes; real style adapters use hours. 1200 steps over 48 clips is ~25 passes per clip -- enough to shift output marginals, nowhere near enough to learn structure.",
+    "implication": "This VINDICATES the research doc's \u00a71 reframing. Self-defense (\"can they reproduce my track?\") was chosen because dataset-scale style mimicry is structurally unavailable to an individual artist. Our attempt to measure style mimicry directly hit the same wall from the other side. Doc \u00a76's \"untested scale\" is untested for a substantive reason, not an oversight."
+  }
+}
