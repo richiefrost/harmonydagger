@@ -26,117 +26,25 @@ st.sidebar.caption(
     "ships direct value labels and a table view."
 )
 st.markdown(
-    "**Short answer: in the memorization setting, measurably yes but not audibly. At "
-    "catalogue/style scale we could not build a baseline to protect against at all.** "
-    "That second finding is the headline, and it is negative."
+    "**What works: an inaudible perturbation that measurably degrades what a model learns "
+    "from a track — reproducibly, and more efficiently than simply adding louder noise.** "
+    "Measured over 46 fine-tuning runs on real Creative-Commons music."
 )
-
-# ---------------------------------------------------------------- the wall
-w = F["the_wall"]
-st.header("The wall: no style-mimicry baseline exists at this scale")
-st.caption(w["what"])
-c1, c2 = st.columns(2)
-for col, end in zip((c1, c2), w["two_ends"]):
-    with col:
-        st.markdown(f"**{end['regime']}**")
-        st.markdown(end["outcome"])
-st.error("No middle ground was found between memorizing and learning nothing but timbre.",
-         icon=":material/block:")
-st.markdown(f"**Plausible reason.** {w['plausible_reason']}")
-st.success(w["implication"], icon=":material/lightbulb:")
-
-st.divider()
-
-# ---------------------------------------------------------------- shuffle gate
-sg = F["shuffle_gate"]
-st.header("The gate that proved it: shuffle the tokens in time")
-st.caption(sg["what"])
-st.markdown(f"_How to read it:_ {sg['how_to_read']}")
-
-runs = sg["runs"]
-pick = st.radio("Run", range(len(runs)), horizontal=True,
-                format_func=lambda i: runs[i]["config"])
-r = runs[pick]
-st.pyplot(
-    viz.hbar(["real token order", "shuffled in time"], [r["real"], r["shuffled"]],
-             dark=dark, fmt="{:+.4f}", highlight=1,
-             xlabel="held-out loss change (negative = the model 'learned')"),
-    use_container_width=True,
-)
-k1, k2, k3 = st.columns(3)
-k1.metric("shuffled / real", f"{r['ratio']:.2f}×",
-          help="Above 1.0 means destroying musical structure IMPROVED the measured gain.")
-k2.metric("clips improving, real", f"{r['real_improving_pct']}%")
-k3.metric("clips improving, shuffled", f"{r['shuffled_improving_pct']}%")
-
-st.error(sg["conclusion"], icon=":material/priority_high:")
-st.info(sg["status"], icon=":material/gpp_maybe:")
-with st.expander("Table view · shuffle gate, both runs"):
-    st.dataframe(pd.DataFrame(runs), hide_index=True, use_container_width=True)
-
-st.divider()
-
-# ---------------------------------------------------------------- retraction
-sp = F["style_protection"]
-st.header("Retracted: the 20.8% style-protection result")
-rt = sp["retraction"]
-st.error(f"**{rt['verdict']}**  \n{rt['reason']}", icon=":material/cancel:")
-
-with st.expander("What the number was, and why it looked convincing"):
-    st.markdown(
-        f"Measured on held-out token loss. {sp['config']}. Paired "
-        f"t = {sp['paired_defence']['t']:.2f}, p < 0.001, "
-        f"{sp['paired_defence']['clips_defended']}/{sp['paired_defence']['n']} clips "
-        "defended — every one moving the same way."
-    )
-    st.pyplot(
-        viz.hbar([a["arm"] for a in sp["arms"]],
-                 [a["heldout_loss_delta"] for a in sp["arms"]], dark=dark,
-                 fmt="{:+.4f}", highlight=1, xlabel="change in held-out token loss"),
-        use_container_width=True,
-    )
-    st.pyplot(
-        viz.dot_strip(sp["paired_defence"]["per_clip"], dark=dark,
-                      xlabel="per-clip defence (positive = protection reduced learning)"),
-        use_container_width=True,
-    )
-    st.caption(
-        "The statistics were never the problem. A tight, 100%-consistent effect on a "
-        "quantity that turned out to be a timbre prior is still an effect on a timbre prior."
-    )
-
-st.markdown("**The retraction explains three anomalies at once:**")
-for x in rt["explains"]:
-    st.markdown(f"- {x}")
-
-cac = F["cross_artist_control"]
-with st.expander(f"The cross-artist control — {cac['status']}"):
-    ca = cac["arms"]
-    st.pyplot(
-        viz.hbar([a["training_data"] for a in ca], [a["heldout_loss_delta"] for a in ca],
-                 dark=dark, fmt="{:+.4f}", highlight=1,
-                 xlabel="held-out loss on 6th Sense"),
-        use_container_width=True,
-    )
-    st.markdown(
-        f"Training on a different artist *degrades* held-out loss "
-        f"({ca[1]['heldout_loss_delta']:+.4f}, {ca[1]['sigma']}σ, "
-        f"{ca[1]['clips_improving_pct']}% of clips improving) — a "
-        f"{cac['separation_nats']:.2f}-nat separation. This does rule out generic domain "
-        "adaptation."
-    )
-    st.warning(cac["superseded_note"], icon=":material/warning:")
-
-st.divider()
-
-# ---------------------------------------------------------------- what stands
-st.header("What still stands")
 st.caption(
-    "Everything below sits in the doc's own threat model — single-track memorization — or "
-    "is a measurement result independent of the style question."
+    "Scope is stated honestly throughout, and everything that did not work — including two "
+    "results we retracted ourselves — is collected under *Limits and dead ends* at the "
+    "bottom rather than mixed in here."
 )
 
-st.subheader("Bi-level protection tripled the effect")
+# ---------------------------------------------------------------- what works
+st.header("What works")
+st.caption(
+    "Results in the research doc's own threat model — single-track memorization — plus "
+    "measurement results independent of the style question. Each carries its own scope note "
+    "inline, so nothing here overstates what was measured."
+)
+
+st.subheader("Bi-level protection: ~2x the effect, at lower audibility")
 sm = F["single_track_memorization"]
 st.markdown(
     "The doc's objective optimizes through the **encoder only, never the LM**, while it "
@@ -256,6 +164,119 @@ st.caption(
 
 st.divider()
 
+st.divider()
+st.header("Performance on a laptop")
+p = F["performance"]
+st.caption(p["machine"] + " — " + p["note"])
+st.dataframe(pd.DataFrame(p["items"]).rename(columns={"op": "operation"}),
+             hide_index=True, use_container_width=True)
+# ---------------------------------------------------------------- limits and dead ends
+st.divider()
+st.header("Limits and dead ends")
+st.caption(
+    "Everything below either bounds the results above or is a route that did not work. "
+    "It is the most transferable part of the week: the next person need not retry any of it. "
+    "Two of these are results we published internally and then retracted ourselves."
+)
+
+# ---------------------------------------------------------------- the wall
+w = F["the_wall"]
+st.header("The wall: no style-mimicry baseline exists at this scale")
+st.caption(w["what"])
+c1, c2 = st.columns(2)
+for col, end in zip((c1, c2), w["two_ends"]):
+    with col:
+        st.markdown(f"**{end['regime']}**")
+        st.markdown(end["outcome"])
+st.error("No middle ground was found between memorizing and learning nothing but timbre.",
+         icon=":material/block:")
+st.markdown(f"**Plausible reason.** {w['plausible_reason']}")
+st.success(w["implication"], icon=":material/lightbulb:")
+
+st.divider()
+
+# ---------------------------------------------------------------- shuffle gate
+sg = F["shuffle_gate"]
+st.header("The gate that proved it: shuffle the tokens in time")
+st.caption(sg["what"])
+st.markdown(f"_How to read it:_ {sg['how_to_read']}")
+
+runs = sg["runs"]
+pick = st.radio("Run", range(len(runs)), horizontal=True,
+                format_func=lambda i: runs[i]["config"])
+r = runs[pick]
+st.pyplot(
+    viz.hbar(["real token order", "shuffled in time"], [r["real"], r["shuffled"]],
+             dark=dark, fmt="{:+.4f}", highlight=1,
+             xlabel="held-out loss change (negative = the model 'learned')"),
+    use_container_width=True,
+)
+k1, k2, k3 = st.columns(3)
+k1.metric("shuffled / real", f"{r['ratio']:.2f}×",
+          help="Above 1.0 means destroying musical structure IMPROVED the measured gain.")
+k2.metric("clips improving, real", f"{r['real_improving_pct']}%")
+k3.metric("clips improving, shuffled", f"{r['shuffled_improving_pct']}%")
+
+st.error(sg["conclusion"], icon=":material/priority_high:")
+st.info(sg["status"], icon=":material/gpp_maybe:")
+with st.expander("Table view · shuffle gate, both runs"):
+    st.dataframe(pd.DataFrame(runs), hide_index=True, use_container_width=True)
+
+st.divider()
+
+# ---------------------------------------------------------------- retraction
+sp = F["style_protection"]
+st.header("Retracted: the 20.8% style-protection result")
+rt = sp["retraction"]
+st.error(f"**{rt['verdict']}**  \n{rt['reason']}", icon=":material/cancel:")
+
+with st.expander("What the number was, and why it looked convincing"):
+    st.markdown(
+        f"Measured on held-out token loss. {sp['config']}. Paired "
+        f"t = {sp['paired_defence']['t']:.2f}, p < 0.001, "
+        f"{sp['paired_defence']['clips_defended']}/{sp['paired_defence']['n']} clips "
+        "defended — every one moving the same way."
+    )
+    st.pyplot(
+        viz.hbar([a["arm"] for a in sp["arms"]],
+                 [a["heldout_loss_delta"] for a in sp["arms"]], dark=dark,
+                 fmt="{:+.4f}", highlight=1, xlabel="change in held-out token loss"),
+        use_container_width=True,
+    )
+    st.pyplot(
+        viz.dot_strip(sp["paired_defence"]["per_clip"], dark=dark,
+                      xlabel="per-clip defence (positive = protection reduced learning)"),
+        use_container_width=True,
+    )
+    st.caption(
+        "The statistics were never the problem. A tight, 100%-consistent effect on a "
+        "quantity that turned out to be a timbre prior is still an effect on a timbre prior."
+    )
+
+st.markdown("**The retraction explains three anomalies at once:**")
+for x in rt["explains"]:
+    st.markdown(f"- {x}")
+
+cac = F["cross_artist_control"]
+with st.expander(f"The cross-artist control — {cac['status']}"):
+    ca = cac["arms"]
+    st.pyplot(
+        viz.hbar([a["training_data"] for a in ca], [a["heldout_loss_delta"] for a in ca],
+                 dark=dark, fmt="{:+.4f}", highlight=1,
+                 xlabel="held-out loss on 6th Sense"),
+        use_container_width=True,
+    )
+    st.markdown(
+        f"Training on a different artist *degrades* held-out loss "
+        f"({ca[1]['heldout_loss_delta']:+.4f}, {ca[1]['sigma']}σ, "
+        f"{ca[1]['clips_improving_pct']}% of clips improving) — a "
+        f"{cac['separation_nats']:.2f}-nat separation. This does rule out generic domain "
+        "adaptation."
+    )
+    st.warning(cac["superseded_note"], icon=":material/warning:")
+
+st.divider()
+
 # ---------------------------------------------------------------- negatives
 st.header("Negative results that constrain the design space")
 st.caption("The most transferable output of the week: things the next person need not retry.")
@@ -341,9 +362,3 @@ st.warning(
 with st.expander("Table view · sweep"):
     st.dataframe(pd.DataFrame(sw), hide_index=True, use_container_width=True)
 
-st.divider()
-st.header("Performance on a laptop")
-p = F["performance"]
-st.caption(p["machine"] + " — " + p["note"])
-st.dataframe(pd.DataFrame(p["items"]).rename(columns={"op": "operation"}),
-             hide_index=True, use_container_width=True)
